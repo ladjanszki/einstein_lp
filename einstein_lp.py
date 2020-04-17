@@ -2,13 +2,14 @@
 This file contains my solution for the Einstein's riddle problem.
 
 The code were written for the Operations Research course 
-taught in the 2020 fall semester at the Budapest Corvinus University
+taught in the 2020 spring semester at the Budapest Corvinus University
 
 Istvan Ladjanszki, istvan.ladjanszki@gmail.com
 
 '''
 import pulp
 import numpy as np
+import pandas as pd
 
 import util
 
@@ -16,10 +17,13 @@ def oneTerm(attr, idx, rhs):
     return pulp.lpSum([(i + 1) * var[attr][i, idx - 1] for i in range(5)]) == rhs
 
 def twoTerm(attr1, idx1, attr2, idx2, rhs):
-    return pulp.lpSum([(i + 1) * var[attr1][i, idx1 - 1] for i in range(5)]) - pulp.lpSum([(i + 1) * var[attr2][i, idx2 - 1] for i in range(5)]) == rhs
+    return pulp.lpSum([(i + 1) * var[attr1][i, idx1 - 1] for i in range(5)]) - pulp.lpSum([(j + 1) * var[attr2][j, idx2 - 1] for j in range(5)]) == rhs
 
 # Attributes we create matrices for
 attributes = ['Nationality', 'Color', 'Drink', 'Pet', 'Cigar']
+
+# Uniqueness test
+uniquenessTest = False
 
 # Creating the problem
 problem = pulp.LpProblem('Einstein', pulp.LpMinimize)
@@ -49,8 +53,8 @@ for attr in attributes:
             const1.append(var[attr][i, j])
             const2.append(var[attr][j, i])
     
-        problem += pulp.lpSum(const1) == 1, '{0}_to_house_{1:d}_{2:d}'.format(attr, i, j)   
-        problem += pulp.lpSum(const2) == 1, 'house_to_{0}_{1:d}_{2:d}'.format(attr, j, i) 
+        problem += pulp.lpSum(const1) == 1
+        problem += pulp.lpSum(const2) == 1
 
 # Indexing conventions for the matrices
 #  British = 1,    Dane = 2,   Norwegian = 3, German = 4, Swedish = 5.
@@ -113,10 +117,19 @@ problem += twoTerm('Color', 2, 'Color', 5, -1)
 #problem += pulp.lpSum([i * var['Nationality'][i, 0] for i in range(5)]) - pulp.lpSum([i * var['Color'][i, 0] for i in range(5)]) == 0
 problem += twoTerm('Nationality', 1, 'Color', 1, 0)
  
+# Testing the uniqueness
+if uniquenessTest:
+    #German has the fish
+    problem += twoTerm('Nationality', 4, 'Pet', 5, 0)
+    # Norvegian yellow house
+    problem += twoTerm('Nationality', 3, 'Color', 3, 0)
+    # Norvegian has cat
+    problem += twoTerm('Nationality', 3, 'Pet', 4, 0)
+
 # OBJECTIVE FUNCTION
 problem += 0, 'All solutions are equally good'
 
-print(problem)
+#print(problem)
 
 # Solve and print
 problem.solve()
@@ -124,15 +137,19 @@ problem.solve()
 #print(problem.status)
 print(pulp.LpStatus[problem.status])
 
-# Print the results
+# Pretty printing the results
+df = pd.DataFrame(columns = attributes, data = np.empty((5, 5), dtype=str))
 for attr in attributes: 
     for i in range(5):
         for j in range(5):
             actVar = var[attr][i,j].varValue 
             if actVar == 1:
-                print(attr + ' of house '  + str(i + 1) + ' is ' + dictionary[attr][j])
+                #print(attr + ' of house '  + str(i + 1) + ' is ' + dictionary[attr][j])
+                df[attr][i] =  dictionary[attr][j]
             
-    print('')
+    #print('')
+
+print(df.transpose())
 
  
   
