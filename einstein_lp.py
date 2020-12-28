@@ -11,8 +11,6 @@ import pulp
 import numpy as np
 import pandas as pd
 
-import util
-
 def oneTerm(attr, idx, rhs):
     return pulp.lpSum([(i + 1) * var[attr][i, idx - 1] for i in range(5)]) == rhs
 
@@ -23,7 +21,8 @@ def twoTerm(attr1, idx1, attr2, idx2, rhs):
 attributes = ['Nationality', 'Color', 'Drink', 'Pet', 'Cigar']
 
 # Uniqueness test
-uniquenessTest = False
+uniquenessTest = True
+#uniquenessTest = False
 
 # Creating the problem
 problem = pulp.LpProblem('Einstein', pulp.LpMinimize)
